@@ -21,3 +21,5 @@ cmake --build .
 ### Windows
 
 Check the official Max SDK docs. The process will be similar to the instructions for macOS above using CMake.
+- https://github.com/Cycling74/max-sdk
+- https://www.youtube.com/watch?v=il5WblTBUgs
