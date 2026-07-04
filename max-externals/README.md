@@ -2,6 +2,11 @@
 
 ## How to compile
 
+First pull in submodules to get the Max SDK:
+```shell
+git submodule update --init --recursive
+```
+
 ### macOS
 
 Generate the Xcode projects using:
