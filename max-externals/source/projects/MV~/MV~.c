@@ -126,7 +126,7 @@ void *MV_new(t_symbol *s, long argc, t_atom *argv)
     x->feedback = 0.0;
 
     x->fpd = 17;
-    
+
     //post("*** DEBUG: initialized Airwindows MV~ object");
 
     return x;
@@ -170,33 +170,14 @@ void MV_perform64(t_MV *x, t_object *dsp64, double **ins, long numins, double **
     double wet = x->E;
 
     while (nSampleFrames-- > 0) {
-        long double inputSample = *in;
-        //double inputSample = *in++;
+        double inputSample = *in++;
 
-        static int noisesource = 0;
-        int residue;
-        double applyresidue;
-        noisesource = noisesource % 1700021; noisesource++;
-        residue = noisesource * noisesource;
-        residue = residue % 170003; residue *= residue;
-        residue = residue % 17011; residue *= residue;
-        residue = residue % 1709; residue *= residue;
-        residue = residue % 173; residue *= residue;
-        residue = residue % 17;
-        applyresidue = residue;
-        applyresidue *= 0.00000001;
-        applyresidue *= 0.00000001;
-        inputSample += applyresidue;
-        if (inputSample<1.2e-38 && -inputSample<1.2e-38) {
-            inputSample -= applyresidue;
-        }
-        //for live air, we always apply the dither noise. Then, if our result is
-        //effectively digital black, we'll subtract it again. We want a 'air' hiss
+        if (fabs(inputSample) < 1.18e-23) inputSample = x->fpd * 1.18e-17;
         double drySample = inputSample;
 
         inputSample += x->feedback;
 
-        inputSample = sinl(inputSample);
+        inputSample = sin(inputSample);
 
 
         switch (stage){
@@ -600,11 +581,11 @@ void MV_perform64(t_MV *x, t_object *dsp64, double **ins, long numins, double **
         }
         //we can pad with the gain to tame distortyness from the PurestConsole code
 
-        if (inputSample > 1.0) inputSample = 1.0;
-        if (inputSample < -1.0) inputSample = -1.0;
+        if (!(inputSample <= 1.0)) inputSample = 1.0;
+        if (!(inputSample >= -1.0)) inputSample = -1.0;
         //without this, you can get a NaN condition where it spits out DC offset at full blast!
 
-        inputSample = asinl(inputSample);
+        inputSample = asin(inputSample);
 
 
         if (wet != 1.0) {
@@ -612,11 +593,8 @@ void MV_perform64(t_MV *x, t_object *dsp64, double **ins, long numins, double **
         }
         //Dry/Wet control, defaults to the last slider
 
-        //begin 64 bit floating point dither
-        int expon; frexp((double)inputSample, &expon);
+        // no output dither needed — Max/MSP uses double throughout
         x->fpd ^= x->fpd << 13; x->fpd ^= x->fpd >> 17; x->fpd ^= x->fpd << 5;
-        inputSample += ((int32_t)(x->fpd)) * 1.110223024625156e-44L * pow(2,expon+62);
-        //end 64 bit floating point dither
 
         *out++ = inputSample;
     }
